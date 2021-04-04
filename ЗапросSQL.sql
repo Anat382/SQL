@@ -1,0 +1,26 @@
+/****** Скрипт для команды SelectTopNRows из среды SSMS  ******/
+SELECT TOP (1000) [PersonID]
+      ,[FullName]
+      ,[PreferredName]
+      ,[SearchName]
+      ,[IsPermittedToLogon]
+      ,[LogonName]
+      ,[IsExternalLogonProvider]
+      ,[HashedPassword]
+      ,[IsSystemUser]
+      ,[IsEmployee]
+      ,[IsSalesperson]
+      ,[UserPreferences]
+      ,[PhoneNumber]
+      ,[FaxNumber]
+      ,[EmailAddress]
+      ,[Photo]
+      ,[CustomFields]
+      ,[OtherLanguages]
+      ,[LastEditedBy]
+      ,[ValidFrom]
+      ,[ValidTo]
+  FROM [WideWorldImporters].[Application].[People]
+
+
+
