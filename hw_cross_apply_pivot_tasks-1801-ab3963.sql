@@ -50,6 +50,7 @@ SET STATISTICS IO, TIME ON
 --where CustomerName like '%Tailspin Toys%' AND CustomerID in (2,3,4,5,6)
 
 
+
 ;WITH
 person as (
 	SELECT 
@@ -80,6 +81,7 @@ SELECT
 	+ [Jessie, ND]
 	as  [TotalQty]
 FROM PivotTab
+ORDER BY CAST( SUBSTRING(InvoiceMonth, 7,4) as int),  CAST( SUBSTRING(InvoiceMonth, 4,2) as int), CAST( SUBSTRING(InvoiceMonth, 0,2) as int)
 
 /*
 2. Для всех клиентов с именем, в котором есть "Tailspin Toys"
@@ -100,34 +102,20 @@ Tailspin Toys (Head Office) | Ribeiroville
 
 
 ;WITH 
-Adres as (
-	 SELECT 
-		CustomerID,
-		CustomerName,
-		DeliveryAddressLine1 as AddressLine
-	 FROM Sales.Customers 
-		WHERE CustomerName like '%Tailspin Toys%' 			
-	 UNION
-	 SELECT 
-		CustomerID,
-		CustomerName,
-		DeliveryAddressLine2 as AddressLine
-	 FROM Sales.Customers 
+	Adres as (
+	SELECT *
+	FROM(
+		SELECT 
+			CustomerID,
+			CustomerName,
+			DeliveryAddressLine1,
+			DeliveryAddressLine2,
+			PostalAddressLine1,
+			PostalAddressLine2
+		FROM Sales.Customers 
 		WHERE CustomerName like '%Tailspin Toys%'
-	 UNION
-	 SELECT 
-		CustomerID,
-		CustomerName,
-		PostalAddressLine1 as AddressLine
-	 FROM Sales.Customers 
-		WHERE CustomerName like '%Tailspin Toys%'
-	 UNION
-	 SELECT 
-		CustomerID,
-		CustomerName,
-		PostalAddressLine2 as AddressLine
-	 FROM Sales.Customers 
-		WHERE CustomerName like '%Tailspin Toys%'
+	) t
+	UNPIVOT (AddressLine FOR Name IN (DeliveryAddressLine1, DeliveryAddressLine2, PostalAddressLine1,PostalAddressLine2)) AS unpt
 )
 
 SELECT 
@@ -158,17 +146,20 @@ CountryId | CountryName | Code
 ----------+-------------+-------
 */
 
-SELECT  
-	c.CountryId, 
-	c.CountryName, 
-	c.IsoAlpha3Code as Code 
-FROM Application.Countries c
-UNION
-SELECT
-	c1.CountryId, 
-	c1.CountryName, 
-	CAST( c1.IsoNumericCode as VARCHAR(255) ) as Code
-FROM Application.Countries c1
+SELECT *
+FROM (
+	SELECT  
+		CountryId, 
+		CountryName, 
+		CAST( IsoAlpha3Code as VARCHAR(255) ) as IsoAlpha3Code ,
+		CAST( IsoNumericCode as VARCHAR(255) ) as IsoNumericCode
+	FROM Application.Countries 
+) c
+UNPIVOT (
+	Code FOR Name IN (IsoAlpha3Code, IsoNumericCode)
+) AS unpt
+
+
 
 
 --SELECT TOP 100  * FROM Application.Countries c
