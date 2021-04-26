@@ -444,3 +444,48 @@ ORDER BY CustomerID, UnitPrice DESC
 
 -- Время работы SQL Server:
 --   Время ЦП = 406 мс, затраченное время = 458 мс.
+
+
+------------------- Дополнительные расчеты для примера по просьбе преподоавтеля -------------------
+
+;WITH
+SalesOver as (
+	SELECT 
+		YEAR(inv.InvoiceID) as [YEAR],
+		MONTH(inv.InvoiceID) as [MONTH],
+		c.CustomerName,
+		SUM(inv.Quantity * inv.UnitPrice) as [SumSales]
+	FROM [Sales].[InvoiceLines] inv
+	LEFT JOIN [Sales].[Invoices] sinv on sinv.InvoiceID=inv.InvoiceID
+	LEFT JOIN [Sales].[Customers] c on c.CustomerID=sinv.CustomerID
+	WHERE sinv.InvoiceDate >= N'20150101'
+	GROUP BY 
+		YEAR(inv.InvoiceID),
+		MONTH(inv.InvoiceID),
+		c.CustomerName
+)
+
+SELECT 
+	[YEAR],
+	[MONTH],
+	CustomerName,
+	[SumSales],
+	 CUME_DIST () OVER (PARTITION BY [YEAR], [MONTH] ORDER BY [SumSales]) AS CumeDist, --  распределение выборки аналогична PERCENT_RANK за исключением что вес присваивается начиная с первого входного значения  по данному показателю можно фильтровать выборку задавая границу
+     PERCENT_RANK() OVER (PARTITION BY [YEAR], [MONTH] ORDER BY [SumSales] ) AS PctRank,  --- распределение выборки  по квантилям (перцентили если перевести в проценты) по данному показателю можно фильтровать выборку задавая границу
+     PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY [SumSales])   
+                            OVER (PARTITION BY [YEAR], [MONTH]) AS MedianCont, -- завышает медиану
+     PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY [SumSales])   
+                            OVER (PARTITION BY [YEAR], [MONTH]) AS MedianDisc, -- фактическая медиана 
+	 PERCENTILE_DISC(0.9) WITHIN GROUP (ORDER BY [SumSales])   
+                            OVER (PARTITION BY [YEAR], [MONTH]) AS [Procentile0.9], -- процентель 0,9 содержится в PERCENT_RANK 
+	 AVG([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) AS AvgSalesMonth,
+	 STDEV([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) AS StdDeviation,
+	 AVG([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) / STDEV([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) as [CoefVariation],  -- вариабельность выборки, более 0,3 высокая
+	 ABS([SumSales]  - AVG([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) ) as [Отклонение],
+	 IIF( ABS([SumSales]  - AVG([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) ) <  STDEV([SumSales]) OVER (PARTITION BY  [YEAR], [MONTH] ) * 2.5 ,   [SumSales], 0) as [SumSalesLess0.83]  -- Исключаем выбросы
+
+FROM SalesOver s1
+ORDER BY s1.[YEAR], [MONTH], CumeDist
+
+
+
