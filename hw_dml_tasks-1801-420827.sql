@@ -50,6 +50,7 @@ SELECT * FROM [Purchasing].[SuppliersPractic]
 
 DELETE  FROM [Purchasing].[SuppliersPractic]
 WHERE SupplierID = 0
+	AND SupplierName = 'Graphic Design Institute' 
 
 SELECT * FROM [Purchasing].[SuppliersPractic]
 
@@ -58,7 +59,7 @@ SELECT * FROM [Purchasing].[SuppliersPractic]
 */
 
 UPDATE [Purchasing].[SuppliersPractic] set SupplierID = 100
-WHERE SupplierName = 'Graphic Design Institute' 
+WHERE SupplierName = 'Fabrikam, Inc.' 
 	AND SupplierID = 0
 
 SELECT * FROM [Purchasing].[SuppliersPractic]
@@ -116,25 +117,25 @@ MERGE [Purchasing].[SuppliersPractic] AS target
 5. Напишите запрос, который выгрузит данные через bcp out и загрузить через bulk insert
 */
 
----- To allow advanced options to be changed.  
---EXEC sp_configure 'show advanced options', 1;  
---GO  
----- To update the currently configured value for advanced options.  
---RECONFIGURE;  
---GO  
----- To enable the feature.  
---EXEC sp_configure 'xp_cmdshell', 1;  
---GO  
----- To update the currently configured value for this feature.  
---RECONFIGURE;  
---GO  
+-- To allow advanced options to be changed.  
+EXEC sp_configure 'show advanced options', 1;  
+GO  
+-- To update the currently configured value for advanced options.  
+RECONFIGURE;  
+GO  
+-- To enable the feature.  
+EXEC sp_configure 'xp_cmdshell', 1;  
+GO  
+-- To update the currently configured value for this feature.  
+RECONFIGURE;  
+GO  
 
 
 DROP TABLE IF EXISTS [Purchasing].[SuppliersPractic] 
 
 SELECT  * INTO [Purchasing].[SuppliersPractic] FROM  [Purchasing].[Suppliers]
 
-DECLARE @sname nvarchar(250) = (SELECT CONCAT('bcp "[WideWorldImporters].[Purchasing].[SuppliersPractic]" out  "E:\SQL_Developer\SuppliersPractic.txt" -T -w -t"@eu&$1&" -S',@@SERVERNAME) )
+DECLARE @sname nvarchar(250) = (SELECT CONCAT('bcp "[WideWorldImporters].[Purchasing].[SuppliersPractic]" out  "E:\SQL_Developer\SuppliersPractic.txt" -T -w -t"@eu&$1&" -S','DESKTOP-NU9LQBU\SQL2017') )
 
 exec master..xp_cmdshell @sname
 
