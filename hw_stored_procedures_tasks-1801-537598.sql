@@ -24,9 +24,9 @@ USE WideWorldImporters
 1) Написать функцию возвращающую Клиента с наибольшей суммой покупки.
 */
 
-IF OBJECT_ID(N'WideWorldImporters.dbo.Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.Top1BuyClient
+IF OBJECT_ID(N'WideWorldImporters.dbo.ufn_Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.ufn_Top1BuyClient
 
-CREATE FUNCTION dbo.Top1BuyClient (@StartDAte date, @EndDAte date)  
+CREATE FUNCTION dbo.ufn_Top1BuyClient (@StartDAte date, @EndDAte date)  
 RETURNS varchar(100)
 WITH EXECUTE AS CALLER  
 AS  
@@ -55,8 +55,8 @@ BEGIN
 END;  
 GO  
 
-SELECT dbo.Top1BuyClient ('20150101', '20150131')  
-IF OBJECT_ID(N'WideWorldImporters.dbo.Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.Top1BuyClient
+SELECT dbo.ufn_Top1BuyClient ('20150101', '20150131')  
+IF OBJECT_ID(N'WideWorldImporters.dbo.ufn_Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.ufn_Top1BuyClient
 
 
 /*
@@ -67,8 +67,8 @@ Sales.Invoices
 Sales.InvoiceLines
 */
 
-IF OBJECT_ID(N'WideWorldImporters.dbo.uspCustomerBay') IS NOT NULL  DROP PROCEDURE dbo.uspCustomerBay
-CREATE PROCEDURE dbo.uspCustomerBay 
+IF OBJECT_ID(N'WideWorldImporters.dbo.usp_CustomerBay') IS NOT NULL  DROP PROCEDURE dbo.usp_CustomerBay
+CREATE PROCEDURE dbo.usp_CustomerBay 
 	@CustomerID int
 
 WITH EXECUTE AS CALLER --выполняются от имени вызывающей стороны родительской процедуры 
@@ -91,8 +91,8 @@ EXEC dbo.uspCustomerBay '22'
 
 3) Создать одинаковую функцию и хранимую процедуру, посмотреть в чем разница в производительности и почему.
 */
-IF OBJECT_ID(N'WideWorldImporters.dbo.uspCustomerBayDate') IS NOT NULL  DROP FUNCTION dbo.uspCustomerBayDate
-ALTER PROCEDURE dbo.uspCustomerBayDate 
+IF OBJECT_ID(N'WideWorldImporters.dbo.usp_CustomerBayDate') IS NOT NULL  DROP FUNCTION dbo.usp_CustomerBayDate
+ALTER PROCEDURE dbo.usp_CustomerBayDate 
 	@StartDAte date, @EndDAte date
 
 WITH EXECUTE AS CALLER --выполняются от имени вызывающей стороны родительской процедуры 
@@ -121,7 +121,7 @@ AS
 			)
 	SELECT @ClientName as ClientName 
 GO  
-EXEC dbo.uspCustomerBayDate  '20150101', '20150131'
+EXEC dbo.usp_CustomerBayDate  '20150101', '20150131'
 --SET STATISTICS IO, TIME OFF;
 SET SHOWPLAN_TEXT OFF;
 SET SHOWPLAN_ALL OFF;
@@ -130,9 +130,9 @@ SET STATISTICS PROFILE OFF;
 
 
 
-IF OBJECT_ID(N'WideWorldImporters.dbo.Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.Top1BuyClient
+IF OBJECT_ID(N'WideWorldImporters.dbo.ufn_Top1BuyClient') IS NOT NULL  DROP FUNCTION dbo.ufn_Top1BuyClient
 
-CREATE FUNCTION dbo.Top1BuyClient (@StartDAte date, @EndDAte date)  
+CREATE FUNCTION dbo.ufn_Top1BuyClient (@StartDAte date, @EndDAte date)  
 RETURNS varchar(100)
 WITH EXECUTE AS CALLER  
 AS  
@@ -161,11 +161,11 @@ BEGIN
 END;  
 GO  
 
-SELECT dbo.Top1BuyClient ('20150101', '20150131')  as ClientName  
+SELECT dbo.ufn_Top1BuyClient ('20150101', '20150131')  as ClientName  
 
 ------- В производительности отличия нет, при отражения действительного плана запроса у функции скрывается ход выполнения. План запроса отражается при выключении SET SHOWPLAN_TEXT ON;
 /*
---------------------- /// PROCEDURE dbo.uspCustomerBayDate 
+--------------------- /// PROCEDURE dbo.usp_CustomerBayDate 
 
        |--Compute Scalar(DEFINE:([Expr1012]=CONVERT_IMPLICIT(varchar(100),[WideWorldImporters].[Sales].[Customers].[CustomerName] as [c].[CustomerName],0)))
             |--Nested Loops(Left Outer Join)
@@ -199,7 +199,7 @@ SELECT dbo.Top1BuyClient ('20150101', '20150131')  as ClientName
                                                |--Compute Scalar(DEFINE:([Expr1016]=CONVERT_IMPLICIT(decimal(10,0),[WideWorldImporters].[Sales].[InvoiceLines].[Quantity] as [inv].[Quantity],0)*[WideWorldImporters].[Sales].[InvoiceLines].[UnitPrice] as [inv].[UnitPrice]))
                                                     |--Index Scan(OBJECT:([WideWorldImporters].[Sales].[InvoiceLines].[NCCX_Sales_InvoiceLines] AS [inv]),  WHERE:(PROBE([Opt_Bitmap1018],[WideWorldImporters].[Sales].[InvoiceLines].[InvoiceID] as [inv].[InvoiceID])))
 
---------------------- ///  FUNCTION dbo.Top1BuyClient
+--------------------- ///  FUNCTION dbo.ufn_Top1BuyClient
 
             |--Compute Scalar(DEFINE:([Expr1012]=CONVERT_IMPLICIT(varchar(100),[WideWorldImporters].[Sales].[Customers].[CustomerName] as [c].[CustomerName],0)))
                  |--Nested Loops(Left Outer Join)
@@ -266,8 +266,9 @@ SELECT dbo.Top1BuyClient ('20150101', '20150131')  as ClientName
 
 --SELECT * FROM dbo.ufn_Top1BuyClientTable ('20150101', '20150131') ORDER BY [SumSales] DESC
 
-
-CREATE PROC #ufn_BuyClientTable @StartDAte date, @EndDAte date 
+USE tempdb
+IF OBJECT_ID(N'tempdb.dbo.#usp_BuyClientTable') IS NOT NULL  DROP PROC dbo.#usp_BuyClientTable
+CREATE PROC #usp_BuyClientTable @StartDAte date, @EndDAte date 
 AS  
 	SELECT 
 		inv.InvoiceID,
@@ -284,7 +285,7 @@ AS
 		sinv.InvoiceDate	
 GO  
 
-EXEC #ufn_BuyClientTable '20150101', '20150131'
+EXEC tempdb.dbo.#usp_BuyClientTable '20150101', '20150131'
 WITH RESULT SETS
 ( 
 	(	
